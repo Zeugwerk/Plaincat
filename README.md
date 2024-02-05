@@ -23,5 +23,5 @@ such that is possible to view and edit code.
 	
 - To convert from plain text (.st files) back to TwinCAT, run the following command
 	```
-	Plaincat decode --target <path_to_folder> --source <path_to_folder>
+	Plaincat decode --target <path_to_empty_folder_for_new_plcproj> --source <path_to_folder_containing_st_files>
 	```
