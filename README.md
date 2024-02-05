@@ -8,3 +8,18 @@ such that is possible to view and edit code.
   While the full parser creates a full abstract syntax tree (AST) for Structured Text, the stripped down version
   only provides the bare minimum AST to convert plain text to TwinCAT XMLs.
   The full parser for now is only available on demand, [contact us](mailto:contact us) if you are interested.
+
+
+## How to use (Command Line Interface)
+
+- Install the extension [Serhioromano.vscode-st](https://marketplace.visualstudio.com/items?itemName=Serhioromano.vscode-st) 
+  so you get syntax highlighting for structured text in vscode.
+- To convert a TwinCAT plcproj file to plain text (.st files), run the following command
+	```
+	Plaincat encode --source <path_to_plcproj> --target <path_to_folder>
+	```
+	
+- To convert from plain text (.st files) back to TwinCAT, run the following command
+	```
+	Plaincat decode --target <path_to_folder> --source <path_to_folder>
+	```

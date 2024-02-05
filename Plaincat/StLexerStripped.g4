@@ -45,7 +45,7 @@ fragment HEXADECIMAL_CHARACTER : HEXADECIMAL_DIGIT | '_'  ;
 fragment HEXADECIMAL_CHARACTERS : HEXADECIMAL_CHARACTER+ ;
 
 NEWLINE
-  : '\r'? '\n' -> channel(HIDDEN)
+  : '\r'? '\n'
   ;
 
 WS
@@ -53,11 +53,11 @@ WS
   ;
 
 LINE_COMMENT
-  : '//' ~[\r\n]* -> channel(HIDDEN) ;
+  : '//' ~[\r\n]*;
 
-BLOCK_COMMENT : '(*' (BLOCK_COMMENT|.)*? '*)' -> channel(HIDDEN) ;
+BLOCK_COMMENT : '(*' (BLOCK_COMMENT|.)*? '*)' ;
   
-PRAGMA : '{' .*? '}' -> channel(HIDDEN) ;
+PRAGMA : '{' .*? '}';
 
 fragment A: [aA];
 fragment B: [bB];

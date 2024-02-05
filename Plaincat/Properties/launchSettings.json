@@ -2,7 +2,7 @@
   "profiles": {
     "Plaincat": {
       "commandName": "Project",
-      "workingDirectory": "C:\\appl\\vscode-plaincat"
+      "commandLineArgs": "encode -s E:\\plaincat_example\\ZAux.st -t E:\\plaincat_example\\ZAux"
     }
   }
 }
