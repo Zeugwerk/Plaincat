@@ -9,6 +9,8 @@ such that is possible to view and edit code.
   only provides the bare minimum AST to convert plain text to TwinCAT XMLs.
   The full parser for now is only available on demand, [contact us](mailto:contact us) if you are interested.
 
+![plaincat](https://github.com/Zeugwerk/vscode-plaincat/assets/84121166/279447f6-6c67-4615-8502-dd9f9b7f6e04)
+
 
 ## How to use (Command Line Interface)
 
