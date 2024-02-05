@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Plaincat</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>preview</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>    
+	  <Antlr4 Include="StLexerStripped.g4" />    
+	  <Antlr4 Include="StParserStripped.g4">
+		  <Error>true</Error>
+		  <Listener>false</Listener>
+		  <Visitor>true</Visitor>
+		  <Package>Lextm.AnsiC</Package>
+		  <JavaExec>PATH</JavaExec>
+	  </Antlr4>  
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="templates\ProjectTemplate\ProjectTemplate.sln">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="templates\ProjectTemplate\ProjectTemplate\PlcTemplate\PlcTemplate.plcproj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="templates\ProjectTemplate\ProjectTemplate\ProjectTemplate.tsproj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+    <PackageReference Include="Antlr4BuildTasks" Version="12.2.0" />
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+</Project>

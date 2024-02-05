@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Plaincat": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\appl\\vscode-plaincat"
+    }
+  }
+}
