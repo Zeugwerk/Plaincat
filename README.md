@@ -1,7 +1,7 @@
 # vscode-plaincat
 
 Proof of concept for importing and exporting TwinCAT PLCs into [Visual Studio Code](Visual Studio Code)
-such that is possible to edit code in Visual Studio.
+such that is possible to view and edit code.
 
 - The project implements minimal effort way to convert TwinCAT files (XML files) into plain text via regular expressions
 - and a stripped down version of Zeugwerk's Structured Text Parser to make it possible to convert plain text into TwinCAT XMLs.
