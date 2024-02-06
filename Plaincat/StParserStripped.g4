@@ -8,7 +8,7 @@ any: (ANY | IDENTIFIER | DOT | STATIC_STRING | STATIC_WSTRING | HEXADECIMAL | WS
 
 declaration: any* NEWLINE+ ((NEWLINE* any* NEWLINE)* END_VAR_)* NEWLINE*;
 
-implementation: NEWLINE* (any+ | NEWLINE)* END_IMPLEMENTATION_ NEWLINE*;
+implementation: NEWLINE* (any+ | NEWLINE)* (END_PROPERTY_ | END_METHOD_ | END_FUNCTIONBLOCK_ | END_FUNCTION_BLOCK_ | END_FUNCTION_ | END_PROGRAM_ | END_IMPLEMENTATION_) NEWLINE*;
 
 global_var_name: IDENTIFIER ;
 
@@ -76,13 +76,15 @@ header: (NEWLINE | any)*;
 
 // Documentation specific
 content locals [int element]
-   : { $element=1; } global_var
+   : { $element=7; } method
+   | { $element=8; } property
+   | { $element=1; } global_var
    | { $element=2; } data_type
    | { $element=3; } function
    | { $element=4; } interface
    | { $element=5; } function_block
    | { $element=6; } program
-    ;
+   ;
 
 global_var: header global_var_declarations declaration?;
 

@@ -30,7 +30,7 @@ namespace Plaincat.Transcoder
             {
                 var stFiles = Directory.EnumerateFiles(targetPath, "*.st", SearchOption.AllDirectories);
                 var otherFiles = Directory.EnumerateFiles(targetPath, "*", SearchOption.AllDirectories);
-                if (stFiles != otherFiles)
+                if (stFiles.Count() + 1 < otherFiles.Count())
                     throw new FileNotFoundException($"Folder {targetPath} already exists and contains non-st files! Use a clean folder");
             }
 
@@ -75,7 +75,7 @@ namespace Plaincat.Transcoder
             {
                 var name = Parser.Utils.GetFullText(method.method_declaration().derived_function_name());
                 var decl = Parser.Utils.GetFullText(method, method.Start, method.declaration() != null ? method.declaration().Stop : method.method_declaration().Stop);
-                var impl = Parser.Utils.GetFullText(method.implementation()).Replace("END_IMPLEMENTATION", "");
+                var impl = Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(method.implementation()));
 
                 sb.Append($"""
     <Method Name="{name}" Id="{FileInterface.SeededGuid(objectName, name)}">
@@ -100,18 +100,18 @@ namespace Plaincat.Transcoder
                 var decl = Parser.Utils.GetFullText(property, property.Start, property.property_declaration().Stop);
 
                 var sbaccessors = new StringBuilder();
-                bool setter = false;
+                bool getter = false;
                 foreach (var accessor in property.property_accessor())
                 {
-                    setter = Regex.IsMatch(Parser.Utils.GetFullText(accessor.implementation()), $@"(REF|:)=\s+{name}");
+                    getter = Regex.IsMatch(Parser.Utils.GetFullText(accessor.implementation()), $@"{name}\s+(REF|:)=");
 
                     sbaccessors.Append($"""
-      <{(setter ? "Set" : "Get")} Name="{(setter ? "Set" : "Get")}" Id="{FileInterface.SeededGuid(objectName, name + (setter ? "#Set" : "#Get"))}">
+      <{(!getter ? "Set" : "Get")} Name="{(!getter ? "Set" : "Get")}" Id="{FileInterface.SeededGuid(objectName, name + (!getter ? "#Set" : "#Get"))}">
         <Declaration><![CDATA[{Parser.Utils.GetFullText(accessor.declaration()).TrimEnd()}]]></Declaration>
         <Implementation>
-          <ST><![CDATA[{Parser.Utils.GetFullText(accessor.implementation()).Replace("END_IMPLEMENTATION", "").TrimEnd()}]]></ST>
+          <ST><![CDATA[{Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(accessor.implementation()))}]]></ST>
         </Implementation>
-      </{(setter ? "Set" : "Get")}>
+      </{(!getter ? "Set" : "Get")}>
 
 """);
                 }
@@ -120,7 +120,7 @@ namespace Plaincat.Transcoder
                 if(property.property_accessor().Length == 0)
                 {
                     sbaccessors.Append($"""
-      <Get Name="Get" Id="{FileInterface.SeededGuid(objectName, name + (setter ? "#Set" : "#Get"))}">
+      <Get Name="Get" Id="{FileInterface.SeededGuid(objectName, name + (!getter ? "#Set" : "#Get"))}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
 """);
@@ -176,7 +176,7 @@ namespace Plaincat.Transcoder
         {
             var name = Parser.Utils.GetFullText(pou.function_declaration().derived_function_name());
             var decl = Parser.Utils.GetFullText(pou, pou.Start, pou.declaration() != null ? pou.declaration().Stop : pou.function_declaration().Stop);
-            var impl = Parser.Utils.GetFullText(pou.implementation()).Replace("END_IMPLEMENTATION", "");
+            var impl = Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(pou.implementation()));
 
             var sb = new StringBuilder();
             sb.Append($"""
@@ -198,7 +198,6 @@ namespace Plaincat.Transcoder
         {
             var name = Parser.Utils.GetFullText(intrf.interface_declaration().derived_function_block_name());
             var decl = Parser.Utils.GetFullText(intrf, intrf.Start, intrf.declaration() != null ? intrf.declaration().Stop : intrf.interface_declaration().Stop);
-            Parser.Utils.GetFullText(intrf.implementation()).Replace("END_IMPLEMENTATION", "");
             var properties = GenerateProperties(name, intrf.property());
             var methods = GenerateMethods(name, intrf.method());
 
@@ -220,7 +219,7 @@ namespace Plaincat.Transcoder
         {
             var name = Parser.Utils.GetFullText(fb.function_block_declaration().derived_function_block_name());
             var decl = Parser.Utils.GetFullText(fb, fb.Start, fb.declaration() != null ? fb.declaration().Stop : fb.function_block_declaration().Stop);
-            var impl = Parser.Utils.GetFullText(fb.implementation()).Replace("END_IMPLEMENTATION", "");
+            var impl = Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(fb.implementation()));
             var properties = GenerateProperties(name, fb.property());
             var methods = GenerateMethods(name, fb.method());
 
@@ -245,7 +244,7 @@ namespace Plaincat.Transcoder
         {
             var name = Parser.Utils.GetFullText(prg.program_declaration().program_type_name());
             var decl = Parser.Utils.GetFullText(prg, prg.Start, prg.declaration() != null ? prg.declaration().Stop : prg.program_declaration().Stop);
-            var impl = Parser.Utils.GetFullText(prg.implementation()).Replace("END_IMPLEMENTATION", "");
+            var impl = Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(prg.implementation()));
             var properties = GenerateProperties(name, prg.property());
             var methods = GenerateMethods(name, prg.method());
 

@@ -4,10 +4,10 @@ using System.Text.RegularExpressions;
 using Antlr4.Runtime.Tree;
 using System.Xml.Linq;
 
-namespace Plaincat
+namespace Plaincat.Transcoder
 {
-  public class Parser
-  {
+    public class Parser
+    {
         public class Utils
         {
             public static string Eol = "\n";
@@ -45,7 +45,7 @@ namespace Plaincat
                 if (t.ChildCount == 0)
                     return Antlr4.Runtime.Misc.Utils.EscapeWhitespace(Trees.GetNodeText(t, ruleNames), false);
 
-                
+
                 StringBuilder sb = new StringBuilder();
                 sb.Append(Lead(level));
                 level++;
@@ -73,6 +73,18 @@ namespace Plaincat
                 }
                 return sb.ToString();
             }
+
+            public static string CleanupImplementation(string impl)
+            {
+                return impl.Replace("END_METHOD", "")
+                    .Replace("END_PROPERTY", "")
+                    .Replace("END_IMPLEMENTATION", "")
+                    .Replace("END_FUNCTION_BLOCK", "")
+                    .Replace("END_FUNCTIONBLOCK", "")
+                    .Replace("END_FUNCTION", "")
+                    .Replace("END_PROGRAM", "")
+                    .TrimEnd();
+            }
         }
 
         static readonly string declRegex = @"<Declaration><!\[CDATA\[(?<decl>.*?)\]\]></Declaration>";
@@ -88,14 +100,14 @@ namespace Plaincat
 
         static public string ExtractDeclarations(string filepath)
         {
-          return String.Join("\n\n", Declarations(filepath));
+            return String.Join("\n\n", Declarations(filepath));
         }
 
         static public string ExtractImplementation(string filepath)
         {
-          string source = File.ReadAllText(filepath);
-          MatchCollection matches = Regex.Matches(source, implRegex, RegexOptions.Singleline);
-          return String.Join("\n\n", from m in matches.Cast<Match>() select m.Groups[1].Value);
+            string source = File.ReadAllText(filepath);
+            MatchCollection matches = Regex.Matches(source, implRegex, RegexOptions.Singleline);
+            return String.Join("\n\n", from m in matches.Cast<Match>() select m.Groups[1].Value);
         }
 
         static public string ExtractCode(string filepath)
@@ -104,28 +116,64 @@ namespace Plaincat
             MatchCollection matches = Regex.Matches(source, $@"{declRegex}|{implRegex}", RegexOptions.Singleline);
 
             StringBuilder sb = new StringBuilder();
+            var decl = "";
             foreach (var m in matches.Cast<Match>())
             {
-                sb.Append(m.Groups["decl"].Value);
-                sb.Append("\n\n");
-                if (m.Groups["impl"].Success)
+                if (m.Groups["decl"].Success)
                 {
-                    sb.Append(m.Groups["impl"].Value);
-                    sb.Append("\n\nEND_IMPLEMENTATION\n\n");
+                    decl = m.Groups["decl"].Value.Trim() + "\r\n"; // the line break is important for parsing
+                    sb.Append(decl);
                 }
+                else if (m.Groups["impl"].Success)
+                {
+                    var impl = m.Groups["impl"].Value.Trim();
+
+                    if (!string.IsNullOrEmpty(impl))
+                    {
+                        sb.Append(impl);
+                        sb.Append("\r\n");
+                    }
+
+                    var declParsed = Parse(decl);
+                    var declContent = declParsed.content();
+                    switch (declContent.element)
+                    {
+                        case 3:
+                            sb.Append("END_FUNCTION");
+                            break;
+                        case 5:
+                            sb.Append("END_FUNCTION_BLOCK");
+                            break;
+                        case 6:
+                            sb.Append("END_PROGRAM");
+                            break;
+                        case 7:
+                            sb.Append("END_METHOD");
+                            break;
+                        case 8:
+                            sb.Append("END_PROPERTY");
+                            break;
+                        default:
+                            sb.Append("END_IMPLEMENTATION");
+                            break;
+                    }
+
+                    sb.Append("\r\n");
+                }
+                sb.Append("\r\n");
             }
 
             return sb.ToString();
         }
-        static public Lextm.AnsiC.StParserStripped Parse(string code)
+        public static Lextm.AnsiC.StParserStripped Parse(string code)
         {
-          ICharStream stream = CharStreams.fromString(code);
-          ITokenSource lexer = new StLexerStripped(stream);
-          ITokenStream tokens = new CommonTokenStream(lexer);
-          Lextm.AnsiC.StParserStripped parser = new Lextm.AnsiC.StParserStripped(tokens);
-          parser.BuildParseTree = true;
+            ICharStream stream = CharStreams.fromString(code);
+            ITokenSource lexer = new StLexerStripped(stream);
+            ITokenStream tokens = new CommonTokenStream(lexer);
+            Lextm.AnsiC.StParserStripped parser = new Lextm.AnsiC.StParserStripped(tokens);
+            parser.BuildParseTree = true;
 
-          return parser;
+            return parser;
         }
     }
 }

@@ -1,7 +1,15 @@
 lexer grammar StLexerStripped;
 
-DOT:       '.';
-
+DOT:				'.';
+END_TYPE_:          E N D '_' T Y P E;
+END_VAR_:			E N D '_' V A R;
+END_METHOD_:		E N D '_' M E T H O D;
+END_PROPERTY_:		E N D '_' P R O P E R T Y;
+END_FUNCTION_BLOCK_:E N D '_' F U N C T I O N '_' B L O C K;
+END_FUNCTIONBLOCK_: E N D '_' F U N C T I O N B L O C K;
+END_FUNCTION_:		E N D '_' F U N C T I O N;
+END_PROGRAM_:		E N D '_' P R O G R A M;
+END_IMPLEMENTATION_:E N D '_' I M P L E M E N T A T I O N; // needed for property set/get atm, todo: check what the iec syntax is here
 PROGRAM_:           P R O G R A M;
 FUNCTION_BLOCK_:    F U N C T I O N '_' B L O C K;
 FUNCTIONBLOCK_:     F U N C T I O N B L O C K;
@@ -16,11 +24,7 @@ FINAL_:             F I N A L;
 PRIVATE_:           P R I V A T E;
 PROTECTED_:         P R O T E C T E D;
 PUBLIC_:            P U B L I C;
-END_TYPE_:          E N D '_' T Y P E;
 TYPE_ :             T Y P E;
-END_VAR_:			E N D '_' V A R;
-IMPLEMENTATION_:    I M P L E M E N T A T I O N;
-END_IMPLEMENTATION_:E N D '_' I M P L E M E N T A T I O N;
 
 STATIC_STRING : '\'' QUOTED_TEXT? '\'' ;
 STATIC_WSTRING : '"' QUOTED_TEXT? '"' ;
