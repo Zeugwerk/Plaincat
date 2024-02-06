@@ -9,6 +9,10 @@ END_FUNCTION_BLOCK_:E N D '_' F U N C T I O N '_' B L O C K;
 END_FUNCTIONBLOCK_: E N D '_' F U N C T I O N B L O C K;
 END_FUNCTION_:		E N D '_' F U N C T I O N;
 END_PROGRAM_:		E N D '_' P R O G R A M;
+END_GET_:			'E' 'N' 'D' '_' 'G' 'E' 'T';
+END_SET_:			'E' 'N' 'D' '_' 'S' 'E' 'T';
+SET_:				'S' 'E' 'T';
+GET_:				'G' 'E' 'T';
 END_IMPLEMENTATION_:E N D '_' I M P L E M E N T A T I O N; // needed for property set/get atm, todo: check what the iec syntax is here
 PROGRAM_:           P R O G R A M;
 FUNCTION_BLOCK_:    F U N C T I O N '_' B L O C K;
@@ -19,6 +23,7 @@ INTERFACE_:         I N T E R F A C E;
 VAR_GLOBAL_:        V A R '_' G L O B A L;
 PROPERTY_:          P R O P E R T Y;
 INTERNAL_:          I N T E R N A L;
+CONSTANT_:          C O N S T A N T;
 ABSTRACT_:          A B S T R A C T;
 FINAL_:             F I N A L;
 PRIVATE_:           P R I V A T E;

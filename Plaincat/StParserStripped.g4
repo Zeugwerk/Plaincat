@@ -4,11 +4,17 @@ options {
     tokenVocab = StLexerStripped;
 }
 
-any: (ANY | IDENTIFIER | DOT | STATIC_STRING | STATIC_WSTRING | HEXADECIMAL | WS | LINE_COMMENT | BLOCK_COMMENT | PRAGMA);
+constant: CONSTANT_;
+
+get: GET_;
+
+set: SET_;
+
+any: (ANY | IDENTIFIER | CONSTANT_ | DOT | STATIC_STRING | STATIC_WSTRING | HEXADECIMAL | WS | LINE_COMMENT | BLOCK_COMMENT | PRAGMA);
 
 declaration: any* NEWLINE+ ((NEWLINE* any* NEWLINE)* END_VAR_)* NEWLINE*;
 
-implementation: NEWLINE* (any+ | NEWLINE)* (END_PROPERTY_ | END_METHOD_ | END_FUNCTIONBLOCK_ | END_FUNCTION_BLOCK_ | END_FUNCTION_ | END_PROGRAM_ | END_IMPLEMENTATION_) NEWLINE*;
+implementation: NEWLINE* (any+ | NEWLINE)* (END_GET_ | END_SET_ | END_PROPERTY_ | END_METHOD_ | END_FUNCTIONBLOCK_ | END_FUNCTION_BLOCK_ | END_FUNCTION_ | END_PROGRAM_ | END_IMPLEMENTATION_) NEWLINE*;
 
 global_var_name: IDENTIFIER ;
 
@@ -20,7 +26,11 @@ derived_function_name: IDENTIFIER ;
 
 derived_function_block_name: IDENTIFIER ; 
 
-global_var_declarations: VAR_GLOBAL_;
+global_var_declarations:
+    VAR_GLOBAL_
+    global_declaration_modifiers?;
+
+global_declaration_modifiers: (INTERNAL_ | constant)+ ;
 
 function_declaration: 
     FUNCTION_
@@ -86,7 +96,7 @@ content locals [int element]
    | { $element=6; } program
    ;
 
-global_var: header global_var_declarations declaration?;
+global_var: header global_var_declarations declaration;
 
 data_type: header data_type_declaration? implementation?;
 
@@ -100,6 +110,8 @@ program: header program_declaration declaration? implementation? (method | prope
 
 method: header method_declaration declaration? implementation?;
 
-property: header property_declaration (property_accessor)*;
+property: header property_declaration (property_setter | property_getter)*;
 
-property_accessor: property_declaration_modifier? declaration? implementation;
+property_getter: property_declaration_modifier? (any | NEWLINE)* get declaration? implementation;
+
+property_setter: property_declaration_modifier? (any | NEWLINE)* set declaration? implementation;

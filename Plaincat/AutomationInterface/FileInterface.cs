@@ -158,16 +158,19 @@ namespace Plaincat.AutomationInterface
                     references.Add(new PlcLibrary { Name = match.Groups[1].Value.Trim(), Version = match.Groups[2].Value.Trim(), DistributorName = match.Groups[3].Value.Trim() });
             }
 
-            re = new Regex(@"(.*?),(.*?),(.*?)");
+            re = new Regex(@"(.*?),(.*?),(.*)");
             foreach (XElement g in plc.Elements(TcNs + "Project").Elements(TcNs + "ItemGroup").Elements(TcNs + "LibraryReference"))
             {
-                var libraryReference = g.Attribute("Include").Value.ToString();
+                var libraryReference = g.Attribute("Include")?.Value?.ToString();
                 if (libraryReference == null)
                     continue;
 
                 var match = re.Match(libraryReference);
                 if (match.Success)
-                    references.Add(new PlcLibrary { Name = match.Groups[1].Value.Trim(), Version = match.Groups[2].Value.Trim(), DistributorName = match.Groups[3].Value.Trim() });
+                {
+                    var ns = g.Element(TcNs + "Namespace")?.Value ?? match.Groups[1].Value.Trim();
+                    references.Add(new PlcLibrary { Name = match.Groups[1].Value.Trim(), Version = match.Groups[2].Value.Trim(), DistributorName = match.Groups[3].Value.Trim(), Namespace = ns });
+                }
             }
 
             return references;
@@ -217,7 +220,7 @@ namespace Plaincat.AutomationInterface
                 var qualifiedOnly = new XElement(TcNs + "QualifiedOnly");
 
                 defaultResolution.Value = resolution.Value;
-                ns.Value = reference.Name;
+                ns.Value = reference.Namespace ?? reference.Name;
                 qualifiedOnly.Value = "false";
 
                 placeholderReference.Add(defaultResolution);

@@ -76,40 +76,76 @@ namespace Plaincat.Transcoder
 
             public static string CleanupImplementation(string impl)
             {
-                return impl.Replace("END_METHOD", "")
+                return Regex.Replace(impl, @"^  ", "", RegexOptions.Multiline)
+                    .Replace("END_METHOD", "")
                     .Replace("END_PROPERTY", "")
                     .Replace("END_IMPLEMENTATION", "")
                     .Replace("END_FUNCTION_BLOCK", "")
                     .Replace("END_FUNCTIONBLOCK", "")
                     .Replace("END_FUNCTION", "")
                     .Replace("END_PROGRAM", "")
+                    .Replace("END_GET", "")
+                    .Replace("END_SET", "")
                     .TrimEnd();
             }
         }
 
-        static readonly string declRegex = @"<Declaration><!\[CDATA\[(?<decl>.*?)\]\]></Declaration>";
+        /*
+               <Get Name="Get" Id="{7c0b4089-1bc3-059e-27e0-90eec858d0c2}">
+                <Declaration><![CDATA[VAR
+        END_VAR
+        ]]></Declaration>
+                <Implementation>
+                  <ST><![CDATA[Booted := THIS^.State >= ObjectState.Idle;]]></ST>
+                </Implementation>
+              </Get> 
+         */
+
+        static readonly string declRegex = @"(<(Get|Set).*?>.*?)?<Declaration><!\[CDATA\[(?<decl>.*?)\]\]></Declaration>";
         static readonly string implRegex = @"<Implementation>\s*?<ST>\s*?<!\[CDATA\[(?<impl>.*?)\]\]>\s*?</ST>\s*?</Implementation>";
 
-        static public List<string> Declarations(string filepath)
+        static private string CloseScope(string decl, bool getter, bool setter)
         {
-            string source = File.ReadAllText(filepath);
-            MatchCollection matches = Regex.Matches(source, declRegex, RegexOptions.Singleline);
+            StringBuilder sb = new StringBuilder();
 
-            return matches.Cast<Match>().Select(x => x.Groups[1].Value).ToList();
+            if (decl != "")
+            {
+                var declContent = ParseContent(decl);
+                switch (declContent.element)
+                {
+                    case 3:
+                        sb.Append("END_FUNCTION\r\n");
+                        break;
+                    case 5:
+                        sb.Append("END_FUNCTION_BLOCK\r\n");
+                        break;
+                    case 6:
+                        sb.Append("END_PROGRAM\r\n");
+                        break;
+                    case 7:
+                        sb.Append("END_METHOD\r\n");
+                        break;
+                    case 8:
+                        break;
+                    default:
+
+                        if (getter)
+                        {
+                            sb.Append("END_GET\r\n");
+                        }
+                        else if (setter)
+                        {
+                            sb.Append("END_SET\r\n");
+                        }
+
+                        break;
+                }
+
+                sb.Append("\r\n");
+            }
+
+            return sb.ToString();
         }
-
-        static public string ExtractDeclarations(string filepath)
-        {
-            return String.Join("\n\n", Declarations(filepath));
-        }
-
-        static public string ExtractImplementation(string filepath)
-        {
-            string source = File.ReadAllText(filepath);
-            MatchCollection matches = Regex.Matches(source, implRegex, RegexOptions.Singleline);
-            return String.Join("\n\n", from m in matches.Cast<Match>() select m.Groups[1].Value);
-        }
-
         static public string ExtractCode(string filepath)
         {
             string source = File.ReadAllText(filepath);
@@ -117,12 +153,36 @@ namespace Plaincat.Transcoder
 
             StringBuilder sb = new StringBuilder();
             var decl = "";
+            bool setter = false;
+            bool getter = false;
             foreach (var m in matches.Cast<Match>())
             {
                 if (m.Groups["decl"].Success)
                 {
+                    // close previous decl
+                    sb.Append(CloseScope(decl, getter, setter));
+                    
                     decl = m.Groups["decl"].Value.Trim() + "\r\n"; // the line break is important for parsing
-                    sb.Append(decl);
+
+                    // quick and dirty solution to seperate getter and setter ...
+                    if (m.Groups[2].Value == "Get")
+                    {
+                        getter = true;
+                        setter = false;
+                        sb.Append("GET\r\n");
+                        sb.Append(decl);
+                    }
+                    else if (m.Groups[2].Value == "Set")
+                    {
+                        setter = true;
+                        getter = false;
+                        sb.Append("SET\r\n");
+                        sb.Append(decl);
+                    }
+                    else
+                    {
+                        sb.Append(decl);
+                    }
                 }
                 else if (m.Groups["impl"].Success)
                 {
@@ -130,42 +190,19 @@ namespace Plaincat.Transcoder
 
                     if (!string.IsNullOrEmpty(impl))
                     {
-                        sb.Append(impl);
+                        sb.Append(Regex.Replace(impl, @"^", @"  ", RegexOptions.Multiline));
                         sb.Append("\r\n");
                     }
-
-                    var declParsed = Parse(decl);
-                    var declContent = declParsed.content();
-                    switch (declContent.element)
-                    {
-                        case 3:
-                            sb.Append("END_FUNCTION");
-                            break;
-                        case 5:
-                            sb.Append("END_FUNCTION_BLOCK");
-                            break;
-                        case 6:
-                            sb.Append("END_PROGRAM");
-                            break;
-                        case 7:
-                            sb.Append("END_METHOD");
-                            break;
-                        case 8:
-                            sb.Append("END_PROPERTY");
-                            break;
-                        default:
-                            sb.Append("END_IMPLEMENTATION");
-                            break;
-                    }
-
-                    sb.Append("\r\n");
                 }
                 sb.Append("\r\n");
             }
 
+            // close previous decl
+            sb.Append(CloseScope(decl, getter, setter));
+
             return sb.ToString();
         }
-        public static Lextm.AnsiC.StParserStripped Parse(string code)
+        public static Lextm.AnsiC.StParserStripped.ContentContext ParseContent(string code, string context=null)
         {
             ICharStream stream = CharStreams.fromString(code);
             ITokenSource lexer = new StLexerStripped(stream);
@@ -173,7 +210,12 @@ namespace Plaincat.Transcoder
             Lextm.AnsiC.StParserStripped parser = new Lextm.AnsiC.StParserStripped(tokens);
             parser.BuildParseTree = true;
 
-            return parser;
+            var content = parser.content();
+
+            if (context != null && parser.NumberOfSyntaxErrors > 0)
+                throw new Exception($"Parsing failed in {context}");
+
+            return content;
         }
     }
 }

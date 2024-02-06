@@ -100,27 +100,42 @@ namespace Plaincat.Transcoder
                 var decl = Parser.Utils.GetFullText(property, property.Start, property.property_declaration().Stop);
 
                 var sbaccessors = new StringBuilder();
-                bool getter = false;
-                foreach (var accessor in property.property_accessor())
-                {
-                    getter = Regex.IsMatch(Parser.Utils.GetFullText(accessor.implementation()), $@"{name}\s+(REF|:)=");
 
+                if (property.property_setter().Length > 1)
+                    throw new Exception($"Muliple getters for property {objectName}.{name}");
+                if (property.property_getter().Length > 1)
+                    throw new Exception($"Muliple Setters for property {objectName}.{name}");
+
+                if (property.property_setter().Length == 1)
+                {
                     sbaccessors.Append($"""
-      <{(!getter ? "Set" : "Get")} Name="{(!getter ? "Set" : "Get")}" Id="{FileInterface.SeededGuid(objectName, name + (!getter ? "#Set" : "#Get"))}">
-        <Declaration><![CDATA[{Parser.Utils.GetFullText(accessor.declaration()).TrimEnd()}]]></Declaration>
+      <Set Name="Set" Id="{FileInterface.SeededGuid(objectName, name + "#Set")}">
+        <Declaration><![CDATA[{Parser.Utils.GetFullText(property.property_setter().First().declaration()).TrimEnd()}]]></Declaration>
         <Implementation>
-          <ST><![CDATA[{Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(accessor.implementation()))}]]></ST>
+          <ST><![CDATA[{Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(property.property_setter().First().implementation()))}]]></ST>
         </Implementation>
-      </{(!getter ? "Set" : "Get")}>
+      </Set>
 
 """);
                 }
 
-                // todo: maybe it is just a parse error that this can be 0
-                if(property.property_accessor().Length == 0)
+                if (property.property_getter().Length == 1)
                 {
                     sbaccessors.Append($"""
-      <Get Name="Get" Id="{FileInterface.SeededGuid(objectName, name + (!getter ? "#Set" : "#Get"))}">
+      <Get Name="Get" Id="{FileInterface.SeededGuid(objectName, name + "#Set")}">
+        <Declaration><![CDATA[{Parser.Utils.GetFullText(property.property_getter().First().declaration()).TrimEnd()}]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[{Parser.Utils.CleanupImplementation(Parser.Utils.GetFullText(property.property_getter().First().implementation()))}]]></ST>
+        </Implementation>
+      </Get>
+
+""");
+                }
+
+                if (property.property_getter().Length == 0 && property.property_setter().Length == 0)
+                {
+                    sbaccessors.Append($"""
+      <Get Name="Get" Id="{FileInterface.SeededGuid(objectName, name + "#Get")}">
         <Declaration><![CDATA[]]></Declaration>
       </Get>
 """);
@@ -146,7 +161,7 @@ namespace Plaincat.Transcoder
             sb.Append($"""
 <?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <GVL Name="{name}" Id="{FileInterface.SeededGuid(name, "")}" ParameterList="True">
+  <GVL Name="{name}" Id="{FileInterface.SeededGuid(name, "")}" ParameterList="{(gvl.global_var_declarations().global_declaration_modifiers().constant().FirstOrDefault() != null ? "True" : "False")}">
     <Declaration><![CDATA[{decl.TrimEnd()}]]></Declaration>
   </GVL>
 </TcPlcObject>
@@ -283,8 +298,7 @@ namespace Plaincat.Transcoder
             foreach (var file in Directory.GetFileSystemEntries(sourcePath, "*.st", SearchOption.AllDirectories))
             {
                 var relFilepath = file.Substring(sourcePath.Length + 1);
-                var parsed = Parser.Parse(File.ReadAllText(file));
-                var content = parsed.content();
+                var content = Parser.ParseContent(File.ReadAllText(file), file);
                 string extension;
                 string xml;
                 switch (content.element)
