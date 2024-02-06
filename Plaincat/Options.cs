@@ -10,6 +10,19 @@ using System.Timers;
 namespace Plaincat
 {
 
+    [Verb("reencode", HelpText = "")]
+    class ReencodeOptions
+    {
+        [Option('s', "source", Required = true, Default = "", HelpText = "")]
+        public string? SourcePlcProj { get; set; }
+
+        [Option('i', "intermediate", Required = true, Default = "", HelpText = "")]
+        public string? IntermediatePath { get; set; }
+
+        [Option('t', "target", Required = true, Default = "", HelpText = "")]
+        public string? TargetPath { get; set; }
+    }
+
     [Verb("decode", HelpText = "")]
     class DecodeOptions
     {

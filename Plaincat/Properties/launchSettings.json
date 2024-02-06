@@ -2,7 +2,7 @@
   "profiles": {
     "Plaincat": {
       "commandName": "Project",
-      "commandLineArgs": "encode -s E:\\plaincat_example\\ZAux.st -t E:\\plaincat_example\\ZAux"
+      "commandLineArgs": "reencode -s C:\\appl\\Zeugwerk-Framework\\ZEquipment\\ZEquipment\\ZEquipment.plcproj -i C:\\plaincat_example\\ZEquipment.st -t C:\\plaincat_example\\ZEquipment"
     }
   }
 }
