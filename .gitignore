@@ -6,6 +6,10 @@
 # User-specific files
 generated/
 generated_plc/
+extension/bin
+extension/out
+extension/.vscode
+extension/nodemodules
 *.rsuser
 *.suo
 *.user
