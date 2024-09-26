@@ -66,7 +66,7 @@ namespace Plaincat.AutomationInterface
             compile.Add(new XElement(xmlns + "SubType", "Code"));
             itemGroup.Add(compile);
 
-            File.WriteAllText($@"{fi.Directory.FullName}\{relFilePath}", code);
+            File.WriteAllText(Path.Combine(fi.Directory.FullName, relFilePath), code);
         }
 
         public static void UpdatePlcProjInclude(XDocument plc, string plcprojPath, string relFilePath, string code)
@@ -78,7 +78,7 @@ namespace Plaincat.AutomationInterface
             if (!found)
                 throw new FileNotFoundException($"{relFilePath} not found in plcproj file");
 
-            File.WriteAllText($@"{fi.Directory.FullName}\{relFilePath}", code);
+            File.WriteAllText(Path.Combine(fi.Directory.FullName, relFilePath), code);
         }
 
         public static string CreateEmptyPlcProject(string targetPath)
@@ -87,15 +87,15 @@ namespace Plaincat.AutomationInterface
             var assembly = Assembly.GetExecutingAssembly();
             var resources = assembly.GetManifestResourceNames();
             var files = new[] {
-                    new { filename = @"templates\ProjectTemplate\ProjectTemplate.sln", overwrite = false },
-                    new { filename = @"templates\ProjectTemplate\ProjectTemplate\ProjectTemplate.tsproj", overwrite = false },
-                    new { filename = @"templates\ProjectTemplate\ProjectTemplate\PlcTemplate\PlcTemplate.plcproj", overwrite = true },
+                    new { filename = Path.Combine("templates", "ProjectTemplate", "ProjectTemplate.sln"), overwrite = false },
+                    new { filename = Path.Combine("templates", "ProjectTemplate", "ProjectTemplate", "ProjectTemplate.tsproj"), overwrite = false },
+                    new { filename = Path.Combine("templates", "ProjectTemplate", "ProjectTemplate", "PlcTemplate", "PlcTemplate.plcproj"), overwrite = true },
                 };
 
             foreach (var f in files)
             {
-                var resourceName = $"Plaincat.{f.filename.Replace(@"\", ".")}";
-                var filename = Path.Combine(targetPath, f.filename.Replace(@"templates\", "")
+                var resourceName = $"Plaincat.{f.filename.Replace($"{Path.DirectorySeparatorChar}", ".")}";
+                var filename = Path.Combine(targetPath, f.filename.Replace(@"templates" + Path.DirectorySeparatorChar, "")
                                                                     .Replace("ProjectTemplate", plcName)
                                                                     .Replace("PlcTemplate", plcName));
 
@@ -113,15 +113,15 @@ namespace Plaincat.AutomationInterface
                 }
             }
 
-            var plcprojPath = $@"{targetPath}\ProjectTemplate\ProjectTemplate\PlcTemplate\PlcTemplate.plcproj"
+            var plcprojPath = Path.Combine(targetPath,"ProjectTemplate","ProjectTemplate","PlcTemplate","PlcTemplate.plcproj")
                             .Replace("ProjectTemplate", plcName)
                             .Replace("PlcTemplate", plcName);
 
-            var tspProjPath = $@"{targetPath}\ProjectTemplate\ProjectTemplate\ProjectTemplate.tsproj"
+            var tspProjPath = Path.Combine(targetPath,"ProjectTemplate","ProjectTemplate","ProjectTemplate.tsproj")
                             .Replace("ProjectTemplate", plcName)
                             .Replace("PlcTemplate", plcName);
 
-            var solutionPath = $@"{targetPath}\ProjectTemplate\ProjectTemplate.sln"
+            var solutionPath = Path.Combine(targetPath,"ProjectTemplate","ProjectTemplate.sln")
                             .Replace("ProjectTemplate", plcName)
                             .Replace("PlcTemplate", plcName);
 
