@@ -27,9 +27,12 @@ such that is possible to view and edit code.
 	```
 
  ## How to use (vscode extension)
- 
- - Download the vscode extension from the [latest release](https://github.com/Zeugwerk/Plaincat/releases/latest)
- - In vscode open 'Extensions' and install `vscode-plaincat-x.x.x.vsix` by clicking on 'Install from VSIX...'
+
+Note that this is not streamlined yet, so instead of just installing an extension from the marketplace you got to
+
+ - Compile the C# project and copy the executable to `C:\appl\vscode-plaincat\vscode-plaincat\bin\` (if you want to use a different path modify `vscode-plaincat/src/extension.ts`
+ - Compile the vscode extension by opening the folder `vscode-plaincat` and running `npx vsce package` in vscode's terminal
+ - In vscode open 'Extensions' and install `vscode-plaincat-0.0.1.vsix` by clicking on 'Install from VSIX...'
  - Reload vscode
  - To convert an existing plcproj to plaintext open the command palette by pressing `Shift+Ctrl+P` and run the command `plaincat.decode` and follow the instructions
  - To convert plaintext back to a plcproj open the command palette by pressing `Shift+Ctrl+P` and run the command `plaincat.encode` and follow the instructions
