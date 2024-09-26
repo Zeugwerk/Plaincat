@@ -25,3 +25,11 @@ such that is possible to view and edit code.
 	```
 	Plaincat decode --target <path_to_empty_folder_for_new_plcproj> --source <path_to_folder_containing_st_files>
 	```
+
+ ## How to use (vscode extension)
+ 
+ - Download the vscode extension from the [latest release](https://github.com/Zeugwerk/Plaincat/releases/latest)
+ - In vscode open 'Extensions' and install vscode-plaincat-x.x.x.vsix by clicking on 'Install from VSIX...'
+ - Reload vscode
+ - To convert an existing plcproj to plaintext open the command palette by pressing `Shift+Ctrl+P` and run the command `plaincat.decode` and follow the instructions
+ - To convert plaintext back to a plcproj open the command palette by pressing `Shift+Ctrl+P` and run the command `plaincat.encode` and follow the instructions
