@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import * as child_process from 'child_process';
+import * as childprocess from 'child_process';
+
+const executablePath = 'C:\\appl\\vscode-plaincat\\vscode-plaincat\\bin\\Plaincat.exe';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -10,21 +12,20 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	let encodeCommand = vscode.commands.registerCommand('plaincat.encode', () => {
-		
+		encode();
 	});
 
 	let decodeCommand = vscode.commands.registerCommand('plaincat.decode', () => {
 		decode();
 	});	
 
-	context.subscriptions.push(encodeCommand, decodeCommand);
+	context.subscriptions.push(encodeCommand, decodeCommand);	
 }
 
 function decode() {
 	vscode.window.showInformationMessage('Decoding plcproj to plain text ...');
-
-    const executablePath = 'C:\\appl\\vscode-plaincat\\vscode-plaincat\\bin\\Plaincat.exe';
     
+	// asks for plcproj
 	vscode.window.showOpenDialog({
 		canSelectFiles: true,
 		canSelectFolders: false,
@@ -36,12 +37,12 @@ function decode() {
 		if (fileUri && fileUri.length > 0) {
 			const plcprojPath = fileUri[0].fsPath;
 
-			// Ask user to select target folder
+			// ask for folder
 			vscode.window.showOpenDialog({
 				canSelectFiles: false,
 				canSelectFolders: true,
 				canSelectMany: false,
-				openLabel: 'Select Target Folder'
+				openLabel: 'Select Target Folder for .st files'
 			}).then(folderUri => {
 				if (folderUri && folderUri.length > 0) {
 					const targetFolder = folderUri[0].fsPath;
@@ -50,16 +51,11 @@ function decode() {
 					args = ['decode', '--source', plcprojPath, '--target', targetFolder];
 					vscode.window.showInformationMessage('Decoding ' + fileUri.toString() + " to " + folderUri.toString());
 
-					// Run the executable with the specified action
-					child_process.execFile(executablePath, args, (error, stdout, stderr) => {
+					childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
 						if (error) {
 							vscode.window.showErrorMessage('Error executing Plaincat: ' + error.message);
 							return;
 						}
-
-						// Handle stdout and stderr if needed
-						console.log('Output: ' + stdout);
-						console.error('Error: ' + stderr);
 
 						vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(targetFolder), false);
 					});
@@ -67,6 +63,43 @@ function decode() {
 			});
 		}
 	});
-}	
+}
+
+function encode() {
+	vscode.window.showInformationMessage('Encoding plain text to plcproj ...');
+
+	if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+		vscode.window.showErrorMessage('No workspace opened.');
+		return;
+	}
+
+	const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
+
+	// ask for target folder
+	vscode.window.showOpenDialog({
+		canSelectFiles: false,
+		canSelectFolders: true,
+		canSelectMany: false,
+		openLabel: 'Select Target Folder for .st files'
+	}).then(folderUri => {
+		if (folderUri && folderUri.length > 0) {
+			const targetFolder = folderUri[0].fsPath;
+
+			let args: string[];
+			args = ['encode', '--source', workspaceFolder, '--target', targetFolder];
+			vscode.window.showInformationMessage('Encoding ' + workspaceFolder.toString() + " to " + folderUri.toString());
+
+			childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
+				if (error) {
+					vscode.window.showErrorMessage('Error executing Plaincat: ' + error.message);
+					return;
+				}
+
+				vscode.window.showInformationMessage('Successfully created plcproj');
+			});
+		}
+	});
+}
+
 
 export function deactivate() {}
