@@ -1,8 +1,12 @@
 import * as vscode from 'vscode';
-import * as path from 'path';
 import * as childprocess from 'child_process';
 
-const executablePath = 'C:\\appl\\vscode-plaincat\\vscode-plaincat\\bin\\Plaincat.exe';
+const defaultExecutable = 'C:\\appl\\vscode-plaincat\\vscode-plaincat\\bin\\Plaincat.exe';
+
+function executable(): string {
+	const configured = vscode.workspace.getConfiguration('plaincat').get<string>('executablePath');
+	return configured && configured.trim() ? configured.trim() : defaultExecutable;
+}
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -51,7 +55,7 @@ function decode() {
 					args = ['decode', '--source', plcprojPath, '--target', targetFolder];
 					vscode.window.showInformationMessage('Decoding ' + fileUri.toString() + " to " + folderUri.toString());
 
-					childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
+					childprocess.execFile(executable(), args, (error, stdout, stderr) => {
 						if (error) {
 							vscode.window.showErrorMessage('Error executing Plaincat: ' + (stderr || error.message));
 							return;
@@ -89,7 +93,7 @@ function encode() {
 			args = ['encode', '--source', workspaceFolder, '--target', targetFolder];
 			vscode.window.showInformationMessage('Encoding ' + workspaceFolder.toString() + " to " + folderUri.toString());
 
-			childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
+			childprocess.execFile(executable(), args, (error, stdout, stderr) => {
 				if (error) {
 					vscode.window.showErrorMessage('Error executing Plaincat: ' + (stderr || error.message));
 					return;

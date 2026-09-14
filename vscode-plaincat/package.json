@@ -21,7 +21,17 @@
         "command": "plaincat.encode",
         "title": "Encode plain text (.st) to a new plcproj"
       }      
-    ]
+    ],
+    "configuration": {
+      "title": "plaincat",
+      "properties": {
+        "plaincat.executablePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to Plaincat.exe. Leave empty to use C:\\appl\\vscode-plaincat\\vscode-plaincat\\bin\\Plaincat.exe."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

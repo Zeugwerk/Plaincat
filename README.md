@@ -1,51 +1,78 @@
 # vscode-plaincat
 
 Proof of concept for importing and exporting TwinCAT PLCs into [Visual Studio Code](https://code.visualstudio.com/)
-such that is possible to view and edit code.
+so you can view and edit the Structured Text as plain files.
 
-- The project implements minimal effort way to convert TwinCAT files (XML files) into plain text via regular expressions
-- and a stripped down version of Zeugwerk's Structured Text Parser to make it possible to convert plain text into TwinCAT XMLs.
-  While the full parser creates a full abstract syntax tree (AST) for Structured Text, the stripped down version
-  only provides the bare minimum AST to convert plain text to TwinCAT XMLs.
-  The full parser for now is only available on demand, [contact us](mailto:info@zeugwerk.at) if you are interested.
+> **This repository is archived and unmaintained.**
+>
+> Plaincat still works as a standalone tool. Build it, run `decode` / `encode`, use the vscode extension. Nothing
+> here depends on our other products.
+>
+> We are not developing it further. The conversion is a proof of concept: TwinCAT XML is pulled apart with regular
+> expressions and written back with a stripped-down Structured Text grammar. Object GUIDs are regenerated on encode,
+> so a round trip rewrites the project. That is fine for looking at code. It is a poor basis for a real workflow.
+>
+> The work that grew out of this lives in **[PlcSense](https://plcsense.com)** (language support, navigation and
+> editing for TwinCAT / Structured Text) and **`zkplaincat`**, a later converter from the same line of work that
+> round-trips a project without throwing away GUIDs and non-ST objects.
+>
+> - PlcSense: [https://plcsense.com](https://plcsense.com)
+> - Zeugwerk: [https://zeugwerk.dev](https://zeugwerk.dev)
+>
+> You are welcome to keep using Plaincat. If you came here to edit TwinCAT in vscode, PlcSense is what we actually
+> maintain.
 
 ![plaincat](https://github.com/Zeugwerk/vscode-plaincat/assets/84121166/279447f6-6c67-4615-8502-dd9f9b7f6e04)
 
+## How this converter works
+
+- TwinCAT files (XML) are turned into plain text with regular expressions.
+- Plain text is turned back into TwinCAT XML with a stripped-down version of Zeugwerk's Structured Text parser.
+  The full parser builds a complete abstract syntax tree. This copy only has the minimum needed to rebuild the XML.
 
 ## How to use (Command Line Interface)
 
-- Install the extension [Serhioromano.vscode-st](https://marketplace.visualstudio.com/items?itemName=Serhioromano.vscode-st) 
-  so you get syntax highlighting for structured text in vscode.
+- Install the extension [Serhioromano.vscode-st](https://marketplace.visualstudio.com/items?itemName=Serhioromano.vscode-st)
+  so you get syntax highlighting for Structured Text in vscode.
 - Build the CLI once
+
 	```
 	dotnet build Plaincat.sln -c Release
 	```
+
 	This produces `Plaincat/bin/Release/net6.0/Plaincat.dll` (run it with `dotnet Plaincat.dll ...`, or use the standalone
 	`Plaincat.exe` on Windows). The tool works on Windows, Linux and macOS.
-- To convert a TwinCAT plcproj file to plain text (.st files), run the following command
+
+- To convert a TwinCAT plcproj file to plain text (.st files), run
+
 	```
 	Plaincat decode --source <path_to_plcproj> --target <path_to_empty_folder>
 	```
-	
-- To convert from plain text (.st files) back to TwinCAT, run the following command
+
+- To convert from plain text (.st files) back to TwinCAT, run
+
 	```
 	Plaincat encode --source <path_to_folder_containing_st_files> --target <path_to_new_output_folder>
 	```
 
-- To do both in one step (e.g. to re-generate all GUIDs, or verify a project round-trips cleanly), run
+- To do both in one step (for example to re-generate all GUIDs, or to check that a project round-trips), run
+
 	```
 	Plaincat reencode --source <path_to_plcproj> --intermediate <path_to_tmp_folder> --target <path_to_new_output_folder>
 	```
 
- ## How to use (vscode extension)
+## How to use (vscode extension)
 
-Note that this is not streamlined yet, so instead of just installing an extension from the marketplace you got to
+This is not streamlined yet, so instead of installing from the marketplace you have to:
 
- - Compile the C# project and copy the executable to `C:\appl\vscode-plaincat\vscode-plaincat\bin\` (if you want to use a different path modify `vscode-plaincat/src/extension.ts`)
- - Compile the vscode extension by opening the folder `vscode-plaincat`, running `npm install` and then `npx vsce package` in vscode's terminal
- - In vscode open 'Extensions' and install `vscode-plaincat-0.0.1.vsix` by clicking on 'Install from VSIX...'
- - Reload vscode
- - To convert an existing plcproj to plaintext open the command palette by pressing `Shift+Ctrl+P` and run the command `plaincat.decode` and follow the instructions
- - To convert plaintext back to a plcproj open the command palette by pressing `Shift+Ctrl+P` and run the command `plaincat.encode` and follow the instructions
+- Compile the C# project and copy the executable to `C:\appl\vscode-plaincat\vscode-plaincat\bin\` (or set
+  `plaincat.executablePath` to your `Plaincat.exe`)
+- Compile the extension by opening the folder `vscode-plaincat`, then running `npm install` and `npx vsce package`
+  in vscode's terminal
+- In vscode open 'Extensions' and install `vscode-plaincat-0.0.1.vsix` via 'Install from VSIX...'
+- Reload vscode
+- Run `plaincat.decode` from the command palette (`Shift+Ctrl+P`) to turn a `.plcproj` into plain text
+- Run `plaincat.encode` to turn the plain text back into a `.plcproj`
 
- Note that the vscode extension itself only works on Windows, since it shells out to `Plaincat.exe` and TwinCAT projects only make sense on Windows anyway. The underlying CLI, however, can also be run on Linux/macOS (e.g. in CI) to convert projects headlessly.
+The extension only works on Windows, because it shells out to `Plaincat.exe` and TwinCAT projects only make sense
+on Windows. The CLI itself also runs on Linux and macOS, so a pipeline can convert projects headlessly.
