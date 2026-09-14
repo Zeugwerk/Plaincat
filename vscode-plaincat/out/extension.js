@@ -67,7 +67,7 @@ function decode() {
                     vscode.window.showInformationMessage('Decoding ' + fileUri.toString() + " to " + folderUri.toString());
                     childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
                         if (error) {
-                            vscode.window.showErrorMessage('Error executing Plaincat: ' + error.message);
+                            vscode.window.showErrorMessage('Error executing Plaincat: ' + (stderr || error.message));
                             return;
                         }
                         vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(targetFolder), false);
@@ -98,7 +98,7 @@ function encode() {
             vscode.window.showInformationMessage('Encoding ' + workspaceFolder.toString() + " to " + folderUri.toString());
             childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
                 if (error) {
-                    vscode.window.showErrorMessage('Error executing Plaincat: ' + error.message);
+                    vscode.window.showErrorMessage('Error executing Plaincat: ' + (stderr || error.message));
                     return;
                 }
                 vscode.window.showInformationMessage('Successfully created plcproj');

@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using Plaincat.Transcoder;
 using Twinpack.Models;
 
 namespace Plaincat.AutomationInterface
@@ -66,7 +67,7 @@ namespace Plaincat.AutomationInterface
             compile.Add(new XElement(xmlns + "SubType", "Code"));
             itemGroup.Add(compile);
 
-            File.WriteAllText(Path.Combine(fi.Directory.FullName, relFilePath), code);
+            File.WriteAllText(Path.Combine(fi.Directory.FullName, Twincat.ToNativePath(relFilePath)), code);
         }
 
         public static void UpdatePlcProjInclude(XDocument plc, string plcprojPath, string relFilePath, string code)
@@ -78,7 +79,7 @@ namespace Plaincat.AutomationInterface
             if (!found)
                 throw new FileNotFoundException($"{relFilePath} not found in plcproj file");
 
-            File.WriteAllText(Path.Combine(fi.Directory.FullName, relFilePath), code);
+            File.WriteAllText(Path.Combine(fi.Directory.FullName, Twincat.ToNativePath(relFilePath)), code);
         }
 
         public static string CreateEmptyPlcProject(string targetPath)

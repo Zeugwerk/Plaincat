@@ -53,7 +53,7 @@ function decode() {
 
 					childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
 						if (error) {
-							vscode.window.showErrorMessage('Error executing Plaincat: ' + error.message);
+							vscode.window.showErrorMessage('Error executing Plaincat: ' + (stderr || error.message));
 							return;
 						}
 
@@ -91,7 +91,7 @@ function encode() {
 
 			childprocess.execFile(executablePath, args, (error, stdout, stderr) => {
 				if (error) {
-					vscode.window.showErrorMessage('Error executing Plaincat: ' + error.message);
+					vscode.window.showErrorMessage('Error executing Plaincat: ' + (stderr || error.message));
 					return;
 				}
 

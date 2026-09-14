@@ -19,6 +19,19 @@ namespace Plaincat.Transcoder
     {
         public static XNamespace TcNs = "http://schemas.microsoft.com/developer/msbuild/2003";
 
+        // plcproj files always store paths with Windows-style backslash separators (TwinCAT is Windows-only),
+        // regardless of the OS the transcoder is running on. These helpers convert between that convention
+        // and the current OS' native path separator so Plaincat also works when run on Linux/macOS.
+        public static string ToNativePath(string plcProjRelativePath)
+        {
+            return plcProjRelativePath.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
+        }
+
+        public static string ToPlcProjPath(string nativeRelativePath)
+        {
+            return nativeRelativePath.Replace(Path.DirectorySeparatorChar, '\\').Replace('/', '\\');
+        }
+
         public void Decode(string sourcePlcProj, string targetPath)
         {
             if (!File.Exists(sourcePlcProj))
@@ -42,7 +55,7 @@ namespace Plaincat.Transcoder
                     .Where(x => x.Elements(TcNs + "ExcludeFromBuild").Count() == 0 || x.Element(TcNs + "ExcludeFromBuild").Value == "false"))
 
             {
-                var sourceFilePath = $@"{path}\{file.Attribute("Include").Value}";
+                var sourceFilePath = Path.Combine(path, ToNativePath(file.Attribute("Include").Value));
                 var folders = file.Attribute("Include").Value.Split(@"\").ToList();
                 var exclude = false;
                 while (folders.Count() > 1)
@@ -60,12 +73,12 @@ namespace Plaincat.Transcoder
                 if (exclude)
                     continue;
 
-                var targetFilePath = $@"{targetPath}\{file.Attribute("Include").Value}";
+                var targetFilePath = Path.Combine(targetPath, ToNativePath(file.Attribute("Include").Value));
                 Directory.CreateDirectory(new FileInfo(targetFilePath).Directory.FullName);
                 File.WriteAllText(Path.ChangeExtension(targetFilePath, "st"), Parser.ExtractCode(sourceFilePath));
             }
 
-            File.WriteAllText($@"{targetPath}\references.json", JsonSerializer.Serialize(FileInterface.References(plc), new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(Path.Combine(targetPath, "references.json"), JsonSerializer.Serialize(FileInterface.References(plc), new JsonSerializerOptions { WriteIndented = true }));
         }
 
         public string GenerateMethods(string objectName, Lextm.AnsiC.StParserStripped.MethodContext[] methods)
@@ -161,7 +174,7 @@ namespace Plaincat.Transcoder
             sb.Append($"""
 <?xml version="1.0" encoding="utf-8"?>
 <TcPlcObject Version="1.1.0.1">
-  <GVL Name="{name}" Id="{FileInterface.SeededGuid(name, "")}" ParameterList="{(gvl.global_var_declarations().global_declaration_modifiers().constant().FirstOrDefault() != null ? "True" : "False")}">
+  <GVL Name="{name}" Id="{FileInterface.SeededGuid(name, "")}" ParameterList="{(gvl.global_var_declarations().global_declaration_modifiers()?.constant().FirstOrDefault() != null ? "True" : "False")}">
     <Declaration><![CDATA[{decl.TrimEnd()}]]></Declaration>
   </GVL>
 </TcPlcObject>
@@ -295,48 +308,63 @@ namespace Plaincat.Transcoder
             var plcProjDir = plcFileInfo.DirectoryName;
             var plc = XDocument.Load(plcProjPath);
 
+            var errors = new List<string>();
             foreach (var file in Directory.GetFileSystemEntries(sourcePath, "*.st", SearchOption.AllDirectories))
             {
-                var relFilepath = file.Substring(sourcePath.Length + 1);
-                var content = Parser.ParseContent(File.ReadAllText(file), file);
-                string extension;
-                string xml;
-                switch (content.element)
+                try
                 {
-                    case 1:
-                        extension = "TcGVL";
-                        xml = GenerateGvl(Path.GetFileName(file).Replace(".st", ""), content.global_var());
-                        break;
-                    case 2:
-                        extension = "TcDUT";
-                        xml = GenerateDatatype(content.data_type());
-                        break;
-                    case 3:
-                        extension = "TcPOU";
-                        xml = GenerateFunction(content.function());
-                        break;
-                    case 4:
-                        extension = "TcIO";
-                        xml = GenerateInterface(content.@interface());
-                        break;
-                    case 5:
-                        extension = "TcPOU";
-                        xml = GenerateFunctionblock(content.function_block());
-                        break;
-                    case 6:
-                        extension = "TcPOU";
-                        xml = GenerateProgram(content.program());
-                        break;
-                    default:
-                        throw new NotImplementedException("Content Element is not implemented!");
-                }
+                    var relFilepath = file.Substring(sourcePath.Length + 1);
+                    var content = Parser.ParseContent(File.ReadAllText(file), file);
+                    string extension;
+                    string xml;
+                    switch (content.element)
+                    {
+                        case 1:
+                            extension = "TcGVL";
+                            xml = GenerateGvl(Path.GetFileName(file).Replace(".st", ""), content.global_var());
+                            break;
+                        case 2:
+                            extension = "TcDUT";
+                            xml = GenerateDatatype(content.data_type());
+                            break;
+                        case 3:
+                            extension = "TcPOU";
+                            xml = GenerateFunction(content.function());
+                            break;
+                        case 4:
+                            extension = "TcIO";
+                            xml = GenerateInterface(content.@interface());
+                            break;
+                        case 5:
+                            extension = "TcPOU";
+                            xml = GenerateFunctionblock(content.function_block());
+                            break;
+                        case 6:
+                            extension = "TcPOU";
+                            xml = GenerateProgram(content.program());
+                            break;
+                        default:
+                            throw new NotImplementedException("Content Element is not implemented!");
+                    }
 
-                Directory.CreateDirectory(new FileInfo($@"{plcProjDir}\\{relFilepath}").DirectoryName);
-                FileInterface.AddPlcProjInclude(plc, plcProjPath, Path.ChangeExtension(relFilepath, extension), xml);
+                    Directory.CreateDirectory(new FileInfo(Path.Combine(plcProjDir, relFilepath)).DirectoryName);
+                    FileInterface.AddPlcProjInclude(plc, plcProjPath, Path.ChangeExtension(ToPlcProjPath(relFilepath), extension), xml);
+                }
+                catch (Exception ex)
+                {
+                    // Don't let a single unsupported/malformed file abort the whole conversion: without this,
+                    // one bad file would prevent plc.Save() below from ever running, silently discarding every
+                    // other already-converted POU/DUT/GVL/interface (i.e. the plcproj ends up with the project
+                    // tree but none of its "blocks").
+                    errors.Add($"{file}: {ex.Message}");
+                }
             }
 
-            FileInterface.AddReferences(plc, JsonSerializer.Deserialize<List<PlcLibrary>>(File.ReadAllText($@"{sourcePath}\references.json")));
+            FileInterface.AddReferences(plc, JsonSerializer.Deserialize<List<PlcLibrary>>(File.ReadAllText(Path.Combine(sourcePath, "references.json"))));
             plc.Save(plcProjPath);
+
+            if (errors.Count > 0)
+                throw new Exception($"Encoding finished with {errors.Count} error(s), affected files were not added to the plcproj:{Environment.NewLine}{string.Join(Environment.NewLine, errors)}");
         }
     }
 }
